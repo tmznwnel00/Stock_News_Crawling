@@ -22,34 +22,31 @@ class Crawl():
         try:
             while True:
                 #selenium
-                # options = webdriver.ChromeOptions()
-                # options.add_argument("headless")
-                # driver = webdriver.Chrome('chromedriver', chrome_options= options)
-                # driver = webdriver.Chrome('chromedriver')
-                # driver.get(url)
-                # req = driver.page_source
-                # soup = BeautifulSoup(req, 'html.parser')
+                options = webdriver.ChromeOptions()
+                options.add_argument("headless")
+                driver = webdriver.Chrome('chromedriver', options=options)
+                driver.get(url)
+                req = driver.page_source
+                soup = BeautifulSoup(req, 'html.parser')
                 # articles = soup.select('.news_tit')
+                articles = soup.select('.tit_main')
                 
                 #requests
-                req = requests.get(url)
-                if 'captcha.search.daum.net' in req.text:
-                    print(req.text)
-                else:
-                    soup = BeautifulSoup(req.text, 'html.parser')
-                    articles = soup.select('.tit_main')
-                    # if 'naver' in url:
-                    #     articles = soup.select('.news_tit')
-                    # elif 'daum' in url:
-                    #     articles = soup.select('.tit_main')
-                    for article in articles:
-                        title = article.text
-                        link = article['href']
-                        if title not in self.list_set:
-                            self.list_set.add(title)
-                            print(title, link)
-                        else:
-                            break
+                # req = requests.get(url)
+                # soup = BeautifulSoup(req.text, 'html.parser')
+                # articles = soup.select('.tit_main')
+                # if 'naver' in url:
+                #     articles = soup.select('.news_tit')
+                # elif 'daum' in url:
+                #     articles = soup.select('.tit_main')
+                for article in articles:
+                    title = article.text
+                    link = article['href']
+                    if title not in self.list_set:
+                        self.list_set.add(title)
+                        print(title, link)
+                    else:
+                        break
                 time.sleep(5)
 
         except KeyboardInterrupt:
