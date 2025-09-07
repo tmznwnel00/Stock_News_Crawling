@@ -9,48 +9,35 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 class Crawl():
     def __init__(self) -> None:
         #검색어 리스트
-        self.search = ['리튬', '사재기', '사우디', '탈모', '세계최초',
-                        '단독', 'FDA', '완전관해', '사멸', '암',
-                        '매각', '인수', '독점', '상용화',
-                        '경영권', '판호']
-        # self.urls = [f"https://search.naver.com/search.naver?where=news&query={keyword}&sort=1&start=0" for keyword in self.search]
-        self.urls = [f"https://search.daum.net/search?w=news&q={keyword}&sort=recency" for keyword in self.search]
-        # self.urls.extend(self.daum)
+        # self.search = ['리튬', '사재기',  '탈모', '세계최초','AI','당뇨','광산개발','자율주행','중입자','치매','데이터센터','딥페이크','게임체인저','비만','대선정책',
+        #                 '단독', 'FDA', '완전관해', '사멸', '암','핵심원료','현대투자','초전도체','테슬라',
+        #                 '매각', '인수', '독점', '상용화','딥시크',
+        #                 '경영권분쟁', '인공지능', '이차전지', '로봇','MOU','신약','양자',
+        #                '삼성투자', '국내최초', '의무화', 'm&a','전기차화재',
+        #                '개발성공','엔비디아','재건','개발']
+        self.search = ["리튬"]
+        self.urls = [f"https://search.naver.com/search.naver?where=news&query={keyword}&sort=1&start=0" for keyword in self.search]
         self.list_set = set()
 
     def run(self, url):
         try:
             while True:
-                #selenium
-                # options = webdriver.ChromeOptions()
-                # options.add_argument("headless")
-                # driver = webdriver.Chrome('chromedriver', chrome_options= options)
-                # driver = webdriver.Chrome('chromedriver')
-                # driver.get(url)
-                # req = driver.page_source
-                # soup = BeautifulSoup(req, 'html.parser')
-                # articles = soup.select('.news_tit')
-                
                 #requests
-                req = requests.get(url)
-                if 'captcha.search.daum.net' in req.text:
-                    print(req.text)
-                else:
-                    soup = BeautifulSoup(req.text, 'html.parser')
-                    articles = soup.select('.tit_main')
-                    # if 'naver' in url:
-                    #     articles = soup.select('.news_tit')
-                    # elif 'daum' in url:
-                    #     articles = soup.select('.tit_main')
-                    for article in articles:
-                        title = article.text
-                        link = article['href']
-                        if title not in self.list_set:
-                            self.list_set.add(title)
-                            print(title, link)
-                        else:
-                            break
-                time.sleep(5)
+                header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+                req = requests.get(url, headers = header)
+                soup = BeautifulSoup(req.text, 'html.parser')
+                articles = soup.select('.sds-comps-vertical-layout.sds-comps-full-layout.sKYUZNwnLHdgmIxCzyqY')
+                for article in articles:
+                    a_tag = article.select_one("a:has(span.sds-comps-text-type-headline1)")
+
+                    title = a_tag.get_text(strip=True)
+                    link = a_tag["href"]
+                    if link not in self.list_set:
+                        self.list_set.add(link)
+                        print(title, link)
+                    else:
+                        break
+                time.sleep(10)
 
         except KeyboardInterrupt:
             print('\nfinish')
