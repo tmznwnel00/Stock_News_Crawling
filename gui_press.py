@@ -24,7 +24,10 @@ class PressNewsApp(QWidget):
             "https://zdnet.co.kr/news/?lstcode=0000&page=1",
             "https://dealsite.co.kr/newsflash/",
             "https://www.pharmnews.com/news/articleList.html?view_type=sm",
-            "https://www.etnews.com/news/section.html"
+            "https://www.etnews.com/news/section.html",
+            "https://www.newspim.com/news/lists?category_cd=1",
+            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
+            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57"
         ]
         self.news_data = []  # [(press, title, link)]
         self.link_set = set()
@@ -192,6 +195,46 @@ class PressNewsApp(QWidget):
             date = date_tag.text.strip() if date_tag else ""
             items.append(("팜뉴스", title, link, self.normalize_date(date)))
         return items
+    
+    def parse_newspim_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select('article.thumb_h')
+        items = []
+        for article in articles:
+            title_tag = article.select_one("strong.subject a")
+            title = title_tag.get_text(strip=True)
+            link = f"https://www.newspim.com/{title_tag["href"]}"
+
+            date_tag = article.select_one("span.date")
+            date = date_tag.get_text(strip=True)
+            items.append(("뉴스핌", title, link, self.normalize_date(date)))
+        return items
+            
+    def parse_newsprime_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select('td.news1')
+        items = []
+        for article in articles:
+            title_tag = article.select_one("a")
+            title = title_tag.get_text(strip=True)
+            link = title_tag["href"]
+
+            parent = article.find_parent("tr").find_next_sibling("tr")
+            date_span = parent.select_one("span.font11blue2") if parent else None
+            text = date_span.get_text(strip=True)
+            date = text.split("]")[-1].strip() if "]" in text else text
+            dt = datetime.strptime(date, "%Y.%m.%d %H:%M:%S")
+            date = dt.strftime("%Y.%m.%d %H:%M")
+            if "sec_no=56" in url:
+                items.append(("프라임경제 자본시장", title, link, self.normalize_date(date)))
+            elif "sec_no=57" in url:
+                items.append(("프라임경제 산업", title, link, self.normalize_date(date)))
+        return items
 
     def load_news(self):
         new_results = []
@@ -211,6 +254,10 @@ class PressNewsApp(QWidget):
                 return self.parse_dealsite_news(url)
             elif "pharmnews" in url:
                 return self.parse_pharmnews_news(url)
+            elif "newspim" in url:
+                return self.parse_newspim_news(url)
+            elif "newsprime" in url:
+                return self.parse_newsprime_news(url)
             else:
                 return []
 
