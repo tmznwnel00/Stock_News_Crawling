@@ -27,7 +27,8 @@ class PressNewsApp(QWidget):
             "https://www.etnews.com/news/section.html",
             "https://www.newspim.com/news/lists?category_cd=1",
             "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
-            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57"
+            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
+            "https://www.finance-scope.com/article/list/scp_SC007000000"
         ]
         self.news_data = []  # [(press, title, link)]
         self.link_set = set()
@@ -72,7 +73,7 @@ class PressNewsApp(QWidget):
         for fmt in formats:
             try:
                 dt = datetime.strptime(date_str.strip(), fmt)
-                return dt.strftime("%Y.%m.%d %H:%M") if " " in date_str else dt.strftime("%Y/%m/%d")
+                return dt.strftime("%Y.%m.%d %H:%M") if " " in date_str else dt.strftime("%Y.%m.%d")
             except ValueError:
                 continue
         raise ValueError(f"지원하지 않는 날짜 형식: {date_str}")
@@ -235,6 +236,27 @@ class PressNewsApp(QWidget):
             elif "sec_no=57" in url:
                 items.append(("프라임경제 산업", title, link, self.normalize_date(date)))
         return items
+    
+    def parse_finance_scope_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.img_mark_reporter.m_colums")
+        items = []
+        for article in articles:
+            title_tag = article.select_one("div.pick_ttl a")
+    
+            title = title_tag.get_text(strip=True)
+            link = f"https://www.finance-scope.com{title_tag["href"]}"
+
+            date_tag = article.select_one("div.img_mark_info span.color_999")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title == "프리미엄 회원에게만 제공되는 기사입니다":
+                continue
+            else:
+                items.append(("파이낸스스코프", title, link, self.normalize_date(date)))
+        return items
 
     def load_news(self):
         new_results = []
@@ -258,6 +280,8 @@ class PressNewsApp(QWidget):
                 return self.parse_newspim_news(url)
             elif "newsprime" in url:
                 return self.parse_newsprime_news(url)
+            elif "finance-scope" in url:
+                return self.parse_finance_scope_news(url)
             else:
                 return []
 

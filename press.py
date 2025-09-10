@@ -17,8 +17,9 @@ class Crawl():
                      "https://www.etnews.com/news/section.html",
                      "https://www.newspim.com/news/lists?category_cd=1",
                      "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
-                     "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57"]
-        self.url = "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57"
+                     "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
+                     "https://www.finance-scope.com/article/list/scp_SC007000000"]
+        self.url = "https://www.finance-scope.com/article/list/scp_SC007000000"
         
         self.list_set = set()
 
@@ -241,6 +242,31 @@ class Crawl():
                 print(title, link, date)
             else:
                 break
+
+    def parse_finance_scope_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.img_mark_reporter.m_colums")
+        
+        for article in articles:
+            title_tag = article.select_one("div.pick_ttl a")
+    
+            title = title_tag.get_text(strip=True)
+            link = f"https://www.finance-scope.com{title_tag["href"]}"
+
+            date_tag = article.select_one("div.img_mark_info span.color_999")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title == "프리미엄 회원에게만 제공되는 기사입니다":
+                continue
+            elif title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break
+
+            
     
     def run(self, url):
         try:
@@ -268,6 +294,8 @@ class Crawl():
                     self.parse_newsprime_news1(url)
                 elif "newsprime" in url and "sec_no=57" in url:
                     self.parse_newsprime_news2(url)
+                elif "finance-scope" in url:
+                    self.parse_finance_scope_news(url)
                 time.sleep(60)
         except KeyboardInterrupt:
             print('\nfinish')
