@@ -26,8 +26,10 @@ class Crawl():
                 header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
                 req = requests.get(url, headers = header)
                 soup = BeautifulSoup(req.text, 'html.parser')
-                articles = soup.select('.sds-comps-vertical-layout.sds-comps-full-layout.sKYUZNwnLHdgmIxCzyqY')
+                articles = soup.select('.sds-comps-vertical-layout.sds-comps-full-layout.fds-news-item-list-tab > div')
+
                 for article in articles:
+                    
                     a_tag = article.select_one("a:has(span.sds-comps-text-type-headline1)")
 
                     title = a_tag.get_text(strip=True)
