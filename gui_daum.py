@@ -3,7 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
-    QLineEdit, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
+    QLineEdit, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView,
+    QListWidget, QListWidgetItem, QHBoxLayout, QDialog
 )
 from PySide6.QtCore import QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
@@ -12,6 +13,66 @@ import time
 import os
 
 KEYWORD_FILE = os.path.join(os.path.dirname(__file__), "keyword.txt")
+
+class KeywordManager(QDialog):
+    def __init__(self, keywords, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("키워드 관리")
+        self.resize(400, 400)
+        self.keywords = keywords
+
+        layout = QVBoxLayout()
+
+        self.keyword_input = QLineEdit()
+        self.keyword_input.setPlaceholderText("키워드 입력 후 입력란 아래의 '키워드 추가' 버튼 클릭")
+        layout.addWidget(self.keyword_input)
+
+        # 키워드 추가 버튼
+        self.add_button = QPushButton("키워드 추가")
+        self.add_button.clicked.connect(self.add_keyword)
+        layout.addWidget(self.add_button)
+
+        self.list_widget = QListWidget()
+        self.refresh_list()
+        layout.addWidget(self.list_widget)
+
+        self.delete_button = QPushButton("선택 키워드 삭제")
+        self.delete_button.clicked.connect(self.delete_keyword)
+        layout.addWidget(self.delete_button)
+
+        self.setLayout(layout)
+
+    def refresh_list(self):
+        self.list_widget.clear()
+        for kw in self.keywords:
+            item = QListWidgetItem(kw)
+            self.list_widget.addItem(item)
+
+    def add_keyword(self):
+        word = self.keyword_input.text().strip()
+        if word and word not in self.keywords:
+            self.keywords.append(word)
+            with open(KEYWORD_FILE, "a", encoding="utf-8") as f:
+                f.write(f"{word}\n")
+            QMessageBox.information(self, "키워드 추가", f"'{word}' 키워드가 추가되었습니다.")
+            self.refresh_list()
+        self.keyword_input.clear()
+
+    def delete_keyword(self):
+        selected_items = self.list_widget.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, "삭제 오류", "삭제할 키워드를 선택하세요.")
+            return
+        for item in selected_items:
+            kw = item.text()
+            if kw in self.keywords:
+                self.keywords.remove(kw)
+        # 파일 갱신
+        with open(KEYWORD_FILE, "w", encoding="utf-8") as f:
+            for kw in self.keywords:
+                f.write(f"{kw}\n")
+        self.refresh_list()
+        QMessageBox.information(self, "키워드 삭제", "선택한 키워드가 삭제되었습니다.")
 
 class NewsApp(QWidget):
     def __init__(self):
@@ -23,14 +84,12 @@ class NewsApp(QWidget):
         self.news_data = []  # [(media, ts, kw, title, link)]
         self.link_set = set()  # 링크 중복 방지용
 
-        # 레이아웃
         layout = QVBoxLayout()
 
-        # 키워드 입력
-        self.keyword_input = QLineEdit()
-        self.keyword_input.setPlaceholderText("키워드 입력 후 Enter")
-        self.keyword_input.returnPressed.connect(self.add_keyword)
-        layout.addWidget(self.keyword_input)
+        # 키워드 관리 버튼
+        self.keyword_manage_button = QPushButton("키워드 관리")
+        self.keyword_manage_button.clicked.connect(self.open_keyword_manager)
+        layout.addWidget(self.keyword_manage_button)
 
         # 새로고침 버튼
         self.refresh_button = QPushButton("뉴스 새로고침")
@@ -55,8 +114,13 @@ class NewsApp(QWidget):
         self.timer.start(30000)  # 30초(30000ms)마다 load_news 호출
 
         self.setLayout(layout)
+        self.load_news()
 
-        # 프로그램 시작 시 자동으로 뉴스 로드
+    def open_keyword_manager(self):
+        dlg = KeywordManager(self.keywords, self)
+        dlg.exec()
+        # 키워드가 변경되었을 수 있으니 다시 로드
+        self.keywords = self.load_keywords_from_file()
         self.load_news()
 
     def load_keywords_from_file(self):
@@ -68,18 +132,6 @@ class NewsApp(QWidget):
                     if word:
                         keywords.append(word)
         return keywords
-
-    def save_keyword_to_file(self, word):
-        with open(KEYWORD_FILE, "a", encoding="utf-8") as f:
-            f.write(f"{word}\n")
-
-    def add_keyword(self):
-        word = self.keyword_input.text().strip()
-        if word and word not in self.keywords:
-            self.keywords.append(word)
-            self.save_keyword_to_file(word)
-            QMessageBox.information(self, "키워드 추가", f"'{word}' 키워드가 추가되었습니다.")
-        self.keyword_input.clear()
 
     def fetch_news_for_keyword_daum(self, kw):
         header = {
@@ -144,7 +196,10 @@ class NewsApp(QWidget):
         return time.strftime("%H:%M", time.gmtime(ts))
 
     def load_news(self):
-        # 기존 데이터 유지
+        if not self.keywords:
+            self.table.setRowCount(0)
+            return  # 키워드가 없으면 크롤링하지 않음
+
         new_results = []
         new_links = set()
         with ThreadPoolExecutor(max_workers=min(8, len(self.keywords))) as executor:
@@ -156,13 +211,10 @@ class NewsApp(QWidget):
                     if link not in self.link_set and link not in new_links:
                         new_results.append(item)
                         new_links.add(link)
-        # 새 기사만 추가
         if new_results:
             self.news_data.extend(new_results)
             self.link_set.update(new_links)
-            # 시간순(최신순)으로 정렬
             self.news_data.sort(key=lambda x: x[1], reverse=True)
-            # 테이블 전체 초기화 후 재삽입
             self.table.setRowCount(0)
             for row, (media, ts, kw, title, link) in enumerate(self.news_data):
                 self.table.insertRow(row)
@@ -170,12 +222,10 @@ class NewsApp(QWidget):
                 self.table.setItem(row, 1, QTableWidgetItem(self.format_time_kst(ts)))
                 self.table.setItem(row, 2, QTableWidgetItem(kw))
                 self.table.setItem(row, 3, QTableWidgetItem(title))
-        # 새 기사 없으면 아무 작업 안함
 
     def open_link(self, row, col):
         link = self.news_data[row][4]
         QDesktopServices.openUrl(QUrl(link))
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
