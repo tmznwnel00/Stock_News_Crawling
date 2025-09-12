@@ -9,6 +9,9 @@ from PySide6.QtCore import QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
 from concurrent.futures import ThreadPoolExecutor
 import time
+import os
+
+KEYWORD_FILE = os.path.join(os.path.dirname(__file__), "keyword.txt")
 
 class NewsApp(QWidget):
     def __init__(self):
@@ -16,12 +19,7 @@ class NewsApp(QWidget):
         self.setWindowTitle("뉴스 크롤러")
         self.resize(800, 600)
 
-        self.keywords = ['승인', '탈모', '세계최초','AI','매각','신약','현대투자','유리기판','데이터센터','게임체인저','양자','테슬라','3상',
-                        '단독', 'FDA', '완전관해', '사멸', '암','삼성투자','당뇨','엔비디아',
-                         '독점', '상용화','대선정책','승소','국산화',
-                        '경영권분쟁',  '이차전지', '로봇','치매','인수',
-                        '국내최초', 'm&a','비만',
-                       '개발']  # 초기 키워드
+        self.keywords = self.load_keywords_from_file()
         self.news_data = []  # [(media, ts, kw, title, link)]
         self.link_set = set()  # 링크 중복 방지용
 
@@ -62,10 +60,25 @@ class NewsApp(QWidget):
         # 프로그램 시작 시 자동으로 뉴스 로드
         self.load_news()
 
+    def load_keywords_from_file(self):
+        keywords = []
+        if os.path.exists(KEYWORD_FILE):
+            with open(KEYWORD_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    word = line.strip()
+                    if word:
+                        keywords.append(word)
+        return keywords
+
+    def save_keyword_to_file(self, word):
+        with open(KEYWORD_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{word}\n")
+
     def add_keyword(self):
         word = self.keyword_input.text().strip()
         if word and word not in self.keywords:
             self.keywords.append(word)
+            self.save_keyword_to_file(word)
             QMessageBox.information(self, "키워드 추가", f"'{word}' 키워드가 추가되었습니다.")
         self.keyword_input.clear()
 
