@@ -51,7 +51,7 @@ class PressNewsApp(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.load_news)
-        self.timer.start(60000)  # 60초마다 자동 새로고침
+        self.timer.start(30000)  # 60초마다 자동 새로고침
 
         self.setLayout(layout)
         self.load_news()
