@@ -51,7 +51,7 @@ class PressNewsApp(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.load_news)
-        self.timer.start(1000)  # 60초마다 자동 새로고침
+        self.timer.start(5000)  # 60초마다 자동 새로고침
 
         self.setLayout(layout)
         self.load_news()
@@ -297,6 +297,7 @@ class PressNewsApp(QWidget):
             self.news_data.extend(new_results)
             self.link_set.update(new_links)
             # 테이블 전체 초기화 후 재삽입
+            self.news_data.sort(key=lambda x: x[3] if isinstance(x[3], int) else x[3], reverse=True)
             self.table.setRowCount(0)
             for row, (press, title, link, ts) in enumerate(self.news_data):
                 self.table.insertRow(row)
