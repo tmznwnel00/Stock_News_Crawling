@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import re
 import requests
 
 import time
@@ -18,8 +19,28 @@ class Crawl():
                      "https://www.newspim.com/news/lists?category_cd=1",
                      "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
                      "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
-                     "https://www.finance-scope.com/article/list/scp_SC007000000"]
-        self.url = "https://www.finance-scope.com/article/list/scp_SC007000000"
+                     "https://www.finance-scope.com/article/list/scp_SC007000000",
+                     "https://www.hankyung.com/press-release",
+                     "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm",
+                     "https://www.dt.co.kr/economy/general",
+                     "https://www.biotimes.co.kr/news/articleList.html",
+                     "https://www.pinpointnews.co.kr/news/articleList.html?sc_section_code=S1N4&view_type=sm",
+                     "https://www.kdfnews.com/news/articleList.html?view_type=sm",
+                     "https://gamefocus.co.kr/html_file.php?file=normal_all_news.html",
+                     "https://www.newsis.com/world/list/?cid=10100&scid=10101",
+                     "https://www.newsis.com/money/list/?cid=15000&scid=15001",
+                     "https://www.newsis.com/economy/list/?cid=10400&scid=10401",
+                     "https://www.newsis.com/business/list/?cid=13000&scid=13001",
+                     "https://www.epnc.co.kr/news/articleList.html?view_type=sm",
+                     "https://www.businesspost.co.kr/BP?command=sub&sub=2",
+                     "https://signalm.sedaily.com/Main/Content/HeadLine?NClass=AL",
+                     "https://www.ebn.co.kr/news/articleList.html?view_type=sm",
+                     "http://www.bosa.co.kr/news/articleList.html?view_type=sm",
+                     "http://www.press9.kr/news/articleList.html?sc_section_code=S1N12&view_type=sm",
+                     "http://www.press9.kr/news/articleList.html?sc_section_code=S1N14&view_type=sm",
+                     "https://www.medisobizanews.com/news/articleList.html?view_type=sm"
+                     ]
+        self.url = "https://www.g-enews.com/list.php?ct=g000000"
         
         self.list_set = set()
 
@@ -244,8 +265,7 @@ class Crawl():
                 break
 
     def parse_finance_scope_news(self, url):
-        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
-                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
         req = requests.get(url, headers = header)
         soup = BeautifulSoup(req.text, 'html.parser')
         articles = soup.select("div.img_mark_reporter.m_colums")
@@ -265,9 +285,470 @@ class Crawl():
                 print(title, link, date)
             else:
                 break
-
-            
     
+    
+    def parse_hankyung_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.news-list li")
+        
+        for article in articles:
+            a_tag = article.select_one("h3.news-tit a")
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+
+            # 날짜
+            date_tag = article.select_one("div.news-info span.date")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break
+
+    def parse_pointe_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 li")
+        
+        for article in articles:
+            a_tag = article.select_one("div.view-cont h2.titles a")
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+            link = "https://www.pointe.co.kr" + link
+
+            # 날짜
+            em_tags = article.select("div.view-cont span.byline em")
+            date = em_tags[-1].get_text(strip=True) if em_tags else ""
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break
+        
+    def parse_dt_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.sec-list ul li")
+        for article in articles:
+            
+            a_tag = article.select_one("div.card-body h2.headline a")
+            if not a_tag:
+                continue
+            title = a_tag.get_text(strip=True)
+
+            link = "https://www.dt.co.kr" + a_tag["href"]
+
+            date_tag = article.select_one("div.card-body p.byline span.date")
+            date = date_tag.get_text(strip=True) 
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+                
+            else:
+                break
+        
+    def parse_biotimes_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.table-row")
+        for article in articles:
+            a_tag = article.select_one("div.list-titles a.links")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.biotimes.co.kr" + a_tag["href"]
+
+            date_text = article.select_one("div.list-dated").get_text(strip=True)
+            date = date_text.split("|")[-1].strip()
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+                
+            else:
+                break
+
+    def parse_pinpointnews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("li")
+        
+        for article in articles:
+            a_tag = article.select_one("h4.titles a")
+            if not a_tag:
+                continue
+            title = a_tag.get_text(strip=True)
+            if not title:
+                continue
+            link = "https://www.pinpointnews.co.kr" + a_tag["href"]
+
+            byline = article.select_one("span.byline")
+            date = None
+            if byline:
+                text = byline.get_text(strip=True)
+                
+                match = re.search(r"\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}", text)
+                if match:
+                    date = match.group(0)
+            # else:
+            #     now = datetime.now()
+            #     hour_minute = now.strftime("%H:%M")
+            #     date = f"{date} {hour_minute}" 
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+                
+            else:
+                break
+
+    def parse_kdfnews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.list-block")
+        for article in articles:
+            a_tag = article.select_one("div.list-titles a")
+            
+            title = a_tag.get_text(strip=True)
+            link = "https://www.kdfnews.com" + a_tag["href"] 
+            
+            date_tag = article.select_one("div.list-dated")
+            date = None
+            if date_tag:
+                text = date_tag.get_text(strip=True)
+                match = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}", text)
+                if match:
+                    date = match.group(0)
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+                
+            else:
+                break 
+            
+    def parse_gamefocus_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        a_tags = soup.select("td[style*='padding-bottom'] a")
+
+        for a_tag in a_tags:
+            title = a_tag.get_text(strip=True)
+            link = "https://gamefocus.co.kr/" + a_tag["href"]
+
+            # 같은 tr 안에서 날짜(font) 찾기
+            tr = a_tag.find_parent("tr")
+            date_tag = tr.find_next("font", style=lambda v: v and "858585" in v)
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+                
+            else:
+                break 
+
+    def parse_newsis_world_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.articleList2 > li")
+
+        for article in articles:
+            a_tag = article.select_one("p.tit a")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.newsis.com/" +  a_tag["href"]
+
+            time_tag = article.select_one("p.time")
+            date = time_tag.get_text(strip=True).split("기자")[1] if time_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_newsis_money_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.articleList2 > li")
+
+        for article in articles:
+            a_tag = article.select_one("p.tit a")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.newsis.com/" +  a_tag["href"]
+
+            time_tag = article.select_one("p.time")
+            date = time_tag.get_text(strip=True).split("기자")[1] if time_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_newsis_economy_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.articleList2 > li")
+
+        for article in articles:
+            a_tag = article.select_one("p.tit a")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.newsis.com/" +  a_tag["href"]
+
+            time_tag = article.select_one("p.time")
+            date = time_tag.get_text(strip=True).split("기자")[1] if time_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_newsis_business_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.articleList2 > li")
+
+        for article in articles:
+            a_tag = article.select_one("p.tit a")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.newsis.com/" +  a_tag["href"]
+
+            time_tag = article.select_one("p.time")
+            date = time_tag.get_text(strip=True).split("기자")[1] if time_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+    
+    def parse_epnc_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 > li")
+    
+        for article in articles:
+            a_tag = article.select_one("h2.titles a")
+            title = a_tag.get_text(strip=True)
+            link = "https://www.epnc.co.kr" + a_tag["href"]
+
+            date_tag = article.select_one("span.byline em")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+    
+    def parse_businesspost_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.left_post")
+    
+        for article in articles:
+            title = article.select_one("h3").get_text(strip=True)
+            link = article.select_one("a")["href"]
+            date = None
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_signalm_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.contPadding")
+    
+        for article in articles:
+            a_tag = article.select_one("a.lev1")
+            if not a_tag:
+                continue
+            title_tag = a_tag.select_one("strong span")
+            title = title_tag.get_text(strip=True) 
+
+            link = "https://signal.sedaily.com" + a_tag["href"]
+            time_tag = a_tag.select_one("span.mCon_writer span.time")
+            
+            date = time_tag.get_text(strip=True) if time_tag else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_ebn_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.no-bullet > li")
+    
+        for article in articles:
+            a_tag = article.select_one("h2.titles a")
+
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+    
+            date_divs = article.select("div.byline > div")
+            date_year = date_divs[1].get_text(strip=True) if len(date_divs) > 1 else ""
+            # year = datetime.now().year
+            date = f"2025-{date_year}"
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_bosa_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 > li")
+    
+        for article in articles:
+            a_tag = article.select_one("h4.titles a")
+
+            title = a_tag.get_text(strip=True)
+            link = "http://www.bosa.co.kr" + a_tag["href"]
+    
+            em_tags = article.select("span.byline em")
+            date = em_tags[2].get_text(strip=True) if len(em_tags) >= 3 else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_press9_pharmbiz_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.list-block")
+    
+        for article in articles:
+            a_tag = article.select_one("div.list-titles a")
+
+            title = a_tag.get_text(strip=True)
+            link = "http://www.press9.kr" + a_tag["href"]
+    
+            date_text = article.select_one("div.list-dated")
+            date = ""
+            if date_text:
+                parts = date_text.get_text(strip=True).split("|")
+                date = parts[-1].strip() if len(parts) >= 1 else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_press9_industry_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.list-block")
+    
+        for article in articles:
+            a_tag = article.select_one("div.list-titles a")
+
+            title = a_tag.get_text(strip=True)
+            link = "http://www.press9.kr" + a_tag["href"]
+    
+            em_tags = article.select("span.byline em")
+            date_text = article.select_one("div.list-dated")
+            date = ""
+            if date_text:
+                parts = date_text.get_text(strip=True).split("|")
+                date = parts[-1].strip() if len(parts) >= 1 else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+            
+    def parse_medisobizanews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 > li")
+    
+        for article in articles:
+            a_tag = article.select_one("h4.titles a")
+
+            title = a_tag.get_text(strip=True)
+            link = "https://www.medisobizanews.com" + a_tag["href"]
+    
+            em_tags = article.select("span.byline em")
+            date = em_tags[0].get_text(strip=True) if em_tags else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+    
+    def parse_genews_news1(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.l1d div.w1")
+    
+        for article in articles:
+            a_tag = article.select_one("a.e2")
+            if not a_tag:
+                continue
+
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+
+            date = ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break       
+
+    def parse_genews_news2(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.l2d ul > li")
+    
+        for article in articles:
+            a_tag = article.select_one("div.w2 a.e1")
+            if not a_tag:
+                continue
+
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+
+            date_tag = article.select_one("div.w2 p.e2")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break       
+
     def run(self, url):
         try:
             while True:
@@ -296,6 +777,47 @@ class Crawl():
                     self.parse_newsprime_news2(url)
                 elif "finance-scope" in url:
                     self.parse_finance_scope_news(url)
+                elif "hankyung" in url: 
+                    self.parse_hankyung_news(url)
+                elif "pointe" in url:
+                    self.parse_pointe_news(url)
+                elif "dt.co.kr" in url:
+                    self.parse_dt_news(url)
+                elif "biotimes" in url:
+                    self.parse_biotimes_news(url)
+                elif "pinpointnews" in url:
+                    self.parse_pinpointnews_news(url)
+                elif "kdfnews" in url:
+                    self.parse_kdfnews_news(url)
+                elif "gamefocus" in url:
+                    self.parse_gamefocus_news(url)
+                elif "newsis.com/world" in url:
+                    self.parse_newsis_world_news(url)   
+                elif "newsis.com/money" in url:
+                    self.parse_newsis_money_news(url)   
+                elif "newsis.com/economy" in url:
+                    self.parse_newsis_economy_news(url)
+                elif "newsis.com/business" in url:
+                    self.parse_newsis_business_news(url)
+                elif "epnc" in url:
+                    self.parse_epnc_news(url)
+                elif "businesspost" in url:
+                    self.parse_businesspost_news(url)
+                elif "signalm" in url:
+                    self.parse_signalm_news(url)
+                elif "ebn" in url:
+                    self.parse_ebn_news(url)
+                elif "bosa" in url:
+                    self.parse_bosa_news(url)
+                elif "press9" in url and "S1N12" in url:
+                    self.parse_press9_pharmbiz_news(url)
+                elif "press9" in url and "S1N14" in url:
+                    self.parse_press9_industry_news(url)
+                elif "medisobizanews" in url:
+                    self.parse_medisobizanews_news(url)
+                elif "g-enews" in url:
+                    self.parse_genews_news1(url)
+                    self.parse_genews_news2(url)
                 time.sleep(60)
         except KeyboardInterrupt:
             print('\nfinish')
