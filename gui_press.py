@@ -9,7 +9,7 @@ from PySide6.QtCore import QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
 from concurrent.futures import ThreadPoolExecutor
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class PressNewsApp(QWidget):
     def __init__(self):
@@ -28,7 +28,9 @@ class PressNewsApp(QWidget):
             "https://www.newspim.com/news/lists?category_cd=1",
             "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
             "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
-            "https://www.finance-scope.com/article/list/scp_SC007000000"
+            "https://www.finance-scope.com/article/list/scp_SC007000000",
+            "https://www.hankyung.com/press-release",
+            "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm"
         ]
         self.news_data = []  # [(press, title, link)]
         self.link_set = set()
@@ -171,6 +173,8 @@ class PressNewsApp(QWidget):
         soup = BeautifulSoup(req.text, 'html.parser')
         articles = soup.select('li[id^=article_]')
         items = []
+        today_str = (datetime.now() - timedelta(days=1)).strftime("%Y.%m.%d")
+
         ts = int(time.time()) + 9 * 3600
         for article in articles:
             a_tag = article.select_one("a.title")
@@ -178,7 +182,8 @@ class PressNewsApp(QWidget):
             link = "https://dealsite.co.kr" + a_tag['href']
             time_tag = article.select_one("span.pub-date")
             pub_time = time_tag.text.strip() if time_tag else ""
-            items.append(("딜사이트", title, link, pub_time))
+            pub_time = today_str + " " + pub_time
+            items.append(("딜사이트", title, link, self.normalize_date(pub_time)))
         return items
 
     def parse_pharmnews_news(self, url):
@@ -244,6 +249,7 @@ class PressNewsApp(QWidget):
         soup = BeautifulSoup(req.text, 'html.parser')
         articles = soup.select("div.img_mark_reporter.m_colums")
         items = []
+        
         for article in articles:
             title_tag = article.select_one("div.pick_ttl a")
     
@@ -252,10 +258,55 @@ class PressNewsApp(QWidget):
 
             date_tag = article.select_one("div.img_mark_info span.color_999")
             date = date_tag.get_text(strip=True) if date_tag else ""
+            now = datetime.now()
+            hour_minute = now.strftime("%H:%M")
+            date = f"{date} {hour_minute}" 
+
             if title == "프리미엄 회원에게만 제공되는 기사입니다":
                 continue
             else:
                 items.append(("파이낸스스코프", title, link, self.normalize_date(date)))
+        return items
+    
+    def parse_hankyung_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.news-list li")
+        items = []
+        
+        for article in articles:
+            a_tag = article.select_one("h3.news-tit a")
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+
+            date_tag = article.select_one("div.news-info span.date")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            now = datetime.now()
+            hour_minute = now.strftime("%H:%M")
+            date = f"{date} {hour_minute}" 
+
+            items.append(("한국경제", title, link, self.normalize_date(date)))
+        return items
+    
+    def parse_pointe_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*',
+                  'Cookie': 'csrf_cookie_name=c4750f901e0aba407d4529a3492a27c3; TRACKER_MYLOG1=Mon%2C%2008%20Sep%202025%2004%3A02%3A56%20GMT; _fwb=34nsXtTmtiDC6WvsGUlcA.1757304176559; SID=d64f8fdbb8eea30391ffa229971eb859; _ga=GA1.1.624392975.1757304177; wcs_bt=ad0380f89be1f8:1757304797; _ga_BPMKJNZW0V=GS2.1.s1757304177$o1$g1$t1757304798$j1$l0$h0'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 li")
+        items = []
+
+        for article in articles:
+            a_tag = article.select_one("div.view-cont h2.titles a")
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+            link = "https://www.pointe.co.kr" + link
+
+            em_tags = article.select("div.view-cont span.byline em")
+            date = em_tags[-1].get_text(strip=True) if em_tags else ""
+            items.append(("포인트경제", title, link, self.normalize_date(date)))
         return items
 
     def load_news(self):
@@ -282,6 +333,10 @@ class PressNewsApp(QWidget):
                 return self.parse_newsprime_news(url)
             elif "finance-scope" in url:
                 return self.parse_finance_scope_news(url)
+            elif "hankyung" in url:
+                return self.parse_hankyung_news(url)
+            elif "pointe" in url:
+                return self.parse_pointe_news(url)
             else:
                 return []
 
