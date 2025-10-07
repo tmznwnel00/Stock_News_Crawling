@@ -1,4 +1,5 @@
 import sys
+import os
 import requests
 from bs4 import BeautifulSoup
 from PySide6.QtWidgets import (
@@ -11,27 +12,38 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 from datetime import datetime, timedelta
 
+PRESS_FILE = os.path.join(os.path.dirname(__file__), "press1.txt")
+
 class PressNewsApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("언론사 뉴스 크롤러")
         self.resize(1000, 700)
 
-        self.urls = [
-            "https://www.infostockdaily.co.kr/news/articleList.html?sc_section_code=S1N17&view_type=sm",
-            "https://www.thebell.co.kr/free/content/Article.asp?svccode=00",
-            "https://www.thelec.kr/news/articleList.html",
-            "https://zdnet.co.kr/news/?lstcode=0000&page=1",
-            "https://dealsite.co.kr/newsflash/",
-            "https://www.pharmnews.com/news/articleList.html?view_type=sm",
-            "https://www.etnews.com/news/section.html",
-            "https://www.newspim.com/news/lists?category_cd=1",
-            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
-            "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
-            "https://www.finance-scope.com/article/list/scp_SC007000000",
-            "https://www.hankyung.com/press-release",
-            "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm"
-        ]
+        match_dict = {
+            "인포스탁": "https://www.infostockdaily.co.kr/news/articleList.html?sc_section_code=S1N17&view_type=sm",
+            "더벨": "https://www.thebell.co.kr/free/content/Article.asp?svccode=00",
+            "더일렉": "https://www.thelec.kr/news/articleList.html",
+            "지디넷코리아": "https://zdnet.co.kr/news/?lstcode=0000&page=1",
+            "딜사이트": "https://dealsite.co.kr/newsflash/",
+            "팜뉴스": "https://www.pharmnews.com/news/articleList.html?view_type=sm",
+            "전자신문": "https://www.etnews.com/news/section.html",
+            "뉴스핌": "https://www.newspim.com/news/lists?category_cd=1",
+            "프라임경제 자본시장": "https://www.newsprime.co.kr/news/section_list_all/?sec_no=56",
+            "프라임경제 산업": "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
+            "파이낸스스코프": "https://www.finance-scope.com/article/list/scp_SC007000000",
+            "한국경제": "https://www.hankyung.com/press-release",
+            "포인트경제": "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm"
+        }
+
+        self.urls = []
+        if os.path.exists(PRESS_FILE):
+            with open(PRESS_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    word = line.strip()
+                    if word:
+                        self.urls.append(match_dict[word])
+
         self.news_data = []  # [(press, title, link)]
         self.link_set = set()
 

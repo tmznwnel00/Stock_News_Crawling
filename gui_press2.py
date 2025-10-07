@@ -1,4 +1,5 @@
 import sys
+import os
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -12,32 +13,43 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 from datetime import datetime, timedelta
 
+PRESS_FILE = os.path.join(os.path.dirname(__file__), "press2.txt")
+
 class PressNewsApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("언론사 뉴스 크롤러")
         self.resize(1000, 700)
 
-        self.urls = [
-            "https://www.dt.co.kr/economy/general",
-            "https://www.biotimes.co.kr/news/articleList.html",
-            "https://www.pinpointnews.co.kr/news/articleList.html?sc_section_code=S1N4&view_type=sm",
-            "https://www.kdfnews.com/news/articleList.html?view_type=sm",
-            "https://gamefocus.co.kr/html_file.php?file=normal_all_news.html",
-            "https://www.newsis.com/world/list/?cid=10100&scid=10101",
-            "https://www.newsis.com/money/list/?cid=15000&scid=15001",
-            "https://www.newsis.com/economy/list/?cid=10400&scid=10401",
-            "https://www.newsis.com/business/list/?cid=13000&scid=13001",
-            "https://www.epnc.co.kr/news/articleList.html?view_type=sm",
-            "https://www.businesspost.co.kr/BP?command=sub&sub=2",
-            "https://signalm.sedaily.com/Main/Content/HeadLine?NClass=AL",
-            "https://www.ebn.co.kr/news/articleList.html?view_type=sm",
-            "http://www.bosa.co.kr/news/articleList.html?view_type=sm",
-            "http://www.press9.kr/news/articleList.html?sc_section_code=S1N12&view_type=sm",
-            "http://www.press9.kr/news/articleList.html?sc_section_code=S1N14&view_type=sm",
-            "https://www.medisobizanews.com/news/articleList.html?view_type=sm",
-            "https://www.g-enews.com/list.php?ct=g000000"
-        ]
+        match_dict = {
+            "디지털타임스": "https://www.dt.co.kr/economy/general",
+            "BIOTIMES": "https://www.biotimes.co.kr/news/articleList.html",
+            "핀포인트뉴스": "https://www.pinpointnews.co.kr/news/articleList.html?sc_section_code=S1N4&view_type=sm",
+            "한국면세뉴스": "https://www.kdfnews.com/news/articleList.html?view_type=sm",
+            "게임포커스": "https://gamefocus.co.kr/html_file.php?file=normal_all_news.html",
+            "뉴시스 국제": "https://www.newsis.com/world/list/?cid=10100&scid=10101",
+            "뉴시스 금융": "https://www.newsis.com/money/list/?cid=15000&scid=15001",
+            "뉴시스 경제": "https://www.newsis.com/economy/list/?cid=10400&scid=10401",
+            "뉴시스 산업": "https://www.newsis.com/business/list/?cid=13000&scid=13001",
+            "TECH WORLD": "https://www.epnc.co.kr/news/articleList.html?view_type=sm",
+            "비즈니스 포스트": "https://www.businesspost.co.kr/BP?command=sub&sub=2",
+            "SIGNAL": "https://signalm.sedaily.com/Main/Content/HeadLine?NClass=AL",
+            "EBN 산업경제": "https://www.ebn.co.kr/news/articleList.html?view_type=sm",
+            "의학신문": "http://www.bosa.co.kr/news/articleList.html?view_type=sm",
+            "PRESS9 팜비즈": "http://www.press9.kr/news/articleList.html?sc_section_code=S1N12&view_type=sm",
+            "PRESS9 인더스터리": "http://www.press9.kr/news/articleList.html?sc_section_code=S1N14&view_type=sm",
+            "M메디소비자뉴스": "https://www.medisobizanews.com/news/articleList.html?view_type=sm",
+            "글로벌이코노믹": "https://www.g-enews.com/list.php?ct=g000000"
+        }
+
+        self.urls = []
+        if os.path.exists(PRESS_FILE):
+            with open(PRESS_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    word = line.strip()
+                    if word:
+                        self.urls.append(match_dict[word])
+
         self.news_data = []  # [(press, title, link)]
         self.link_set = set()
 
