@@ -327,6 +327,9 @@ class PressNewsApp(QWidget):
             time_tag = a_tag.select_one("span.mCon_writer span.time")
             
             date = time_tag.get_text(strip=True) if time_tag else ""
+            if "전" in date or "후" in date:
+                now = datetime.now()
+                date = now.strftime("%Y-%m-%d %H:%M")
             items.append(("SIGNAL", title, link, self.normalize_date(date)))
         return items
     
