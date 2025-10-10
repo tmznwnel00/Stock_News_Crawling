@@ -33,7 +33,10 @@ class PressNewsApp(QWidget):
             "프라임경제 산업": "https://www.newsprime.co.kr/news/section_list_all/?sec_no=57",
             "파이낸스스코프": "https://www.finance-scope.com/article/list/scp_SC007000000",
             "한국경제": "https://www.hankyung.com/press-release",
-            "포인트경제": "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm"
+            "포인트경제": "https://www.pointe.co.kr/news/articleList.html?sc_section_code=S1N13&view_type=sm",
+            "엠투데이": "https://www.autodaily.co.kr/news/articleList.html",
+            "이코노미스트": "https://economist.co.kr/article/list/ecn_SC011000000",
+            "메디소비자뉴스": "https://www.medisobizanews.com/news/articleList.html?view_type=sm"
         }
 
         self.urls = []
@@ -320,6 +323,86 @@ class PressNewsApp(QWidget):
             date = em_tags[-1].get_text(strip=True) if em_tags else ""
             items.append(("포인트경제", title, link, self.normalize_date(date)))
         return items
+    
+    def parse_autodaily_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.block-skin > li")
+        items = []
+    
+        for article in articles:
+            title_tag = article.select_one("h4.titles a")
+            date_tag = article.select_one("span.dated")
+
+            if not title_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = "https://www.autodaily.co.kr" + title_tag["href"]
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            items.append(("엠투데이", title, link, self.normalize_date(date)))
+        return items
+    
+    def parse_economist_news1(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.analysis_wrap div.img_part2_keyword_m")
+        items = []
+
+        for article in articles:
+            title_tag = article.select_one("dt.analysis_ttl a")
+            date_tag = article.select_one("dd.analysis_info span.color_999")
+
+            if not title_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = "https://www.economist.co.kr" + title_tag["href"]
+
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            items.append(("이코노미스트", title, link, self.normalize_date(date)))
+        return items
+    
+    def parse_economist_news2(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.signal_pick_wrap_list_inner div.img_mark_reporter.m_colums")
+        items = []
+        
+        for article in articles:
+            title_tag = article.select_one("div.pick_ttl a")
+            date_tag = article.select_one("div.img_mark_info span.color_999")
+
+            if not title_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = "https://www.economist.co.kr" + title_tag["href"]
+
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            items.append(("이코노미스트", title, link, self.normalize_date(date)))
+        return items
+    
+    def parse_medisobizanews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("section#section-list ul.type2 > li")
+        items = []
+        
+        for article in articles:
+            title_tag = article.select_one("div.view-cont h4.titles a")
+            date_tag = article.select_one("div.view-cont span.byline em:first-child")
+
+            title = title_tag.get_text(strip=True)
+            link = "https://www.medisobizanews.com" + title_tag["href"]
+
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            items.append(("메디소비자뉴스", title, link, self.normalize_date(date)))
+        return items
 
     def load_news(self):
         new_results = []
@@ -349,6 +432,14 @@ class PressNewsApp(QWidget):
                 return self.parse_hankyung_news(url)
             elif "pointe" in url:
                 return self.parse_pointe_news(url)
+            elif "autodaily" in url:
+                return self.parse_autodaily_news(url)
+            elif "economist" in url:
+                items1 = self.parse_economist_news1(url)
+                items2 = self.parse_economist_news2(url)
+                return items1 + items2
+            elif "medisobizanews" in url:
+                return self.parse_medisobizanews_news(url)
             else:
                 return []
 
