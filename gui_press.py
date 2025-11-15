@@ -44,7 +44,7 @@ class PressNewsApp(QWidget):
             with open(PRESS_FILE, "r", encoding="utf-8") as f:
                 for line in f:
                     word = line.strip()
-                    if word:
+                    if word and word.startswith('#') is False:
                         self.urls.append(match_dict[word])
 
         self.news_data = []  # [(press, title, link)]
@@ -68,7 +68,7 @@ class PressNewsApp(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.load_news)
-        self.timer.start(5000)  # 60초마다 자동 새로고침
+        self.timer.start(5000)  
 
         self.setLayout(layout)
         self.load_news()

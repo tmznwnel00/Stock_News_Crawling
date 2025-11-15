@@ -47,7 +47,7 @@ class PressNewsApp(QWidget):
             with open(PRESS_FILE, "r", encoding="utf-8") as f:
                 for line in f:
                     word = line.strip()
-                    if word:
+                    if word and word.startswith('#') is False:
                         self.urls.append(match_dict[word])
 
         self.news_data = []  # [(press, title, link)]
