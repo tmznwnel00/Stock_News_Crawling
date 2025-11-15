@@ -42,9 +42,12 @@ class Crawl():
                      "https://www.g-enews.com/list.php?ct=g000000",
                      "https://www.autodaily.co.kr/news/articleList.html",
                      "https://economist.co.kr/article/list/ecn_SC011000000",
-                     "https://www.medisobizanews.com/news/articleList.html?view_type=sm"
+                     "https://www.medisobizanews.com/news/articleList.html?view_type=sm",
+                     "https://news.naver.com/section/101",
+                     "https://www.theguru.co.kr/news/article_list_all.html",
+                     "https://www.yakup.com/news/index.html"
                      ]
-        self.url = "https://www.medisobizanews.com/news/articleList.html?view_type=sm"
+        self.url = "https://news.naver.com/section/101"
         
         self.list_set = set()
 
@@ -152,16 +155,22 @@ class Crawl():
         header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
         req = requests.get(url, headers = header)
         soup = BeautifulSoup(req.text, 'html.parser')
-        print(soup)
-        articles = soup.select('div.list_con ul li')
-        print(len(articles))
-        
+        articles = soup.select("div.info_con ul > li")
+    
         for article in articles:
-            a_tag = article.find('div', class_='assetText').find('a', href=True)
-            title_tag = a_tag.find('h3')
+            a_tag = article.select_one("a")
+            if not a_tag:
+                continue
 
-            title = title_tag.text.strip() 
-            link = f"https://zdnet.co.kr{a_tag['href']}"
+            link = a_tag.get("href", "").strip()
+            if link.startswith("/"):
+                link = "https://www.yakup.com" + link
+
+            title_tag = article.select_one("div.title_con > span")
+            title = title_tag.get_text(strip=True) if title_tag else ""
+
+            date_tag = article.select_one("div.name_con span.date")
+            date = date_tag.get_text(strip=True) if date_tag else ""
             if title not in self.list_set:
                 self.list_set.add(title)
                 print(title, link)
@@ -842,6 +851,54 @@ class Crawl():
             else:
                 break    
 
+    def parse_naver_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        section = soup.select_one("div.section_latest")
+        articles = section.select("li.sa_item") 
+
+        for article in articles:
+            title_tag = article.select_one("div.sa_text a.sa_text_title strong.sa_text_strong")
+            link_tag = article.select_one("div.sa_text a.sa_text_title")
+
+            if not title_tag or not link_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = link_tag["href"].strip()
+
+            date = ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_theguru_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.art_list_all > li")
+
+        for article in articles:
+            a_tag = article.select_one("a")
+            if not a_tag:
+                continue
+
+            link = a_tag["href"].strip()
+
+            title_tag = a_tag.select_one("h2.cmp.c2")
+            title = title_tag.get_text(strip=True) if title_tag else ""
+
+            date_tag = a_tag.select_one("ul.art_info li.date")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
 
     def run(self, url):
         try:
@@ -919,6 +976,10 @@ class Crawl():
                     self.parse_economist_news2(url)
                 elif "medisobizanews" in url:
                     self.parse_medisobizanews_news(url)
+                elif "naver.com" in url:
+                    self.parse_naver_news(url)
+                elif "theguru" in url:
+                    self.parse_theguru_news(url)
                 time.sleep(60)
         except KeyboardInterrupt:
             print('\nfinish')
