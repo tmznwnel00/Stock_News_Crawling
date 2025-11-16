@@ -54,7 +54,7 @@ class Crawl():
                      "https://www.medipana.com/news/articleList.html?sc_section_code=S1N2&view_type=sm",
                      "https://www.boannews.com/media/t_list.asp"
                      ]
-        self.url = "https://www.boannews.com/media/t_list.asp"
+        self.url = "https://www.medipana.com/news/articleList.html?sc_section_code=S1N2&view_type=sm"
         
         self.list_set = set()
 

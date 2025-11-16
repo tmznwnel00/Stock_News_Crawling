@@ -483,10 +483,14 @@ class PressNewsApp(QWidget):
         for article in articles:
             title_tag = article.select_one("h2.altlist-subject a")
             title = title_tag.get_text(strip=True)
+            if not title:
+                continue
             link = title_tag['href']
 
             date_tag = article.select("div.altlist-info-item")[-1]
-            date = date_tag.get_text(strip=True)
+            date_str = date_tag.get_text(strip=True)
+            year = str(datetime.now().year)
+            date = year+'-'+date_str
             items.append(("메디파나뉴스 파마시안", title, link, self.normalize_date(date)))
         return items 
     

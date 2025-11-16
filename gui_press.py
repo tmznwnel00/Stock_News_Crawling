@@ -427,6 +427,7 @@ class PressNewsApp(QWidget):
 
             title = title_tag.get_text(strip=True) if title_tag else ""
             date = date_tag.get_text(strip=True) if date_tag else ""
+            date = date[:-3]
             items.append(("MTN뉴스 IT/과학", title, link, self.normalize_date(date)))
         return items
       
