@@ -39,7 +39,9 @@ class PressNewsApp(QWidget):
             "PRESS9 팜비즈": "http://www.press9.kr/news/articleList.html?sc_section_code=S1N12&view_type=sm",
             "PRESS9 인더스터리": "http://www.press9.kr/news/articleList.html?sc_section_code=S1N14&view_type=sm",
             "M메디소비자뉴스": "https://www.medisobizanews.com/news/articleList.html?view_type=sm",
-            "글로벌이코노믹": "https://www.g-enews.com/list.php?ct=g000000"
+            "글로벌이코노믹": "https://www.g-enews.com/list.php?ct=g000000",
+            "메디파나뉴스 파마시안": "https://www.medipana.com/news/articleList.html?sc_section_code=S1N2&view_type=sm",
+            "보안뉴스": "https://www.boannews.com/media/t_list.asp"
         }
 
         self.urls = []
@@ -471,6 +473,43 @@ class PressNewsApp(QWidget):
             items.append(("글로벌이코노믹", title, link, self.normalize_date(date)))
         return items 
     
+    def parse_medipana_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("li.altlist-webzine-item")
+        items = []
+
+        for article in articles:
+            title_tag = article.select_one("h2.altlist-subject a")
+            title = title_tag.get_text(strip=True)
+            link = title_tag['href']
+
+            date_tag = article.select("div.altlist-info-item")[-1]
+            date = date_tag.get_text(strip=True)
+            items.append(("메디파나뉴스 파마시안", title, link, self.normalize_date(date)))
+        return items 
+    
+    def parse_boannews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.news_list")
+        items = []
+
+        for article in articles:
+            a_tag = article.find("a", href=True)
+            title_tag = article.find("span", class_="news_txt")
+            title = title_tag.get_text(strip=True)
+            link = "https://www.boannews.com" + a_tag['href']
+            date_tag = article.find("span", class_="news_writer")
+            date_str = date_tag.get_text(strip=True).split("|")[-1].strip()
+            dt = datetime.strptime(date_str, "%Y년 %m월 %d일 %H:%M")
+            date = dt.strftime("%Y-%m-%d %H:%M")
+            items.append(("보안뉴스", title, link, self.normalize_date(date)))
+        return items 
+
+    
     def load_news(self):
         new_results = []
         new_links = set()
@@ -513,6 +552,10 @@ class PressNewsApp(QWidget):
                 items1 = self.parse_genews_news1(url)
                 items2 = self.parse_genews_news2(url)
                 return items1 + items2
+            elif "medipana" in url:
+                return self.parse_medipana_news(url)
+            elif "boannews" in url:
+                return self.parse_boannews_news(url)
             else:
                 return []
 

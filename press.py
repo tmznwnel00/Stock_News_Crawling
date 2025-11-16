@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from datetime import datetime
 import re
 import requests
 
@@ -45,11 +46,260 @@ class Crawl():
                      "https://www.medisobizanews.com/news/articleList.html?view_type=sm",
                      "https://news.naver.com/section/101",
                      "https://www.theguru.co.kr/news/article_list_all.html",
-                     "https://www.yakup.com/news/index.html"
+                     "https://www.yakup.com/news/index.html",
+                     "https://news.mtn.co.kr/category-news/M1500",
+                     "https://www.dailypharm.com/Users/News/SectionList.html?Section=2",
+                     "https://www.whosaeng.com/sub_view.html?type=abs",
+                     "https://www.paxetv.com/news/articleList.html?sc_section_code=S1N14&view_type=sm",
+                     "https://www.medipana.com/news/articleList.html?sc_section_code=S1N2&view_type=sm",
+                     "https://www.boannews.com/media/t_list.asp"
                      ]
-        self.url = "https://news.naver.com/section/101"
+        self.url = "https://www.boannews.com/media/t_list.asp"
         
         self.list_set = set()
+
+    def run(self, url):
+        try:
+            while True:
+                #requests
+                if "infostockdaily" in url:
+                    self.parse_info_news(url)     
+                elif "thebell" in url:
+                    self.parse_thebell_news(url)
+                elif "etnews" in url:
+                    self.parse_etnews_news(url)
+                elif "thelec" in url:
+                    self.parse_thelec_news(url)
+                elif "zdnet" in url:
+                    self.parse_zdnet_news(url)
+                elif "yakup" in url:
+                    self.parse_yakup_news(url)
+                elif "dealsite" in url:
+                    self.parse_dealsite_news(url)
+                elif "pharmnews" in url:
+                    self.parse_pharmnews_news(url)
+                elif "newspim" in url:
+                    self.parse_newspim_news(url)
+                elif "newsprime" in url and "sec_no=56" in url:
+                    self.parse_newsprime_news1(url)
+                elif "newsprime" in url and "sec_no=57" in url:
+                    self.parse_newsprime_news2(url)
+                elif "finance-scope" in url:
+                    self.parse_finance_scope_news(url)
+                elif "hankyung" in url: 
+                    self.parse_hankyung_news(url)
+                elif "pointe" in url:
+                    self.parse_pointe_news(url)
+                elif "dt.co.kr" in url:
+                    self.parse_dt_news(url)
+                elif "biotimes" in url:
+                    self.parse_biotimes_news(url)
+                elif "pinpointnews" in url:
+                    self.parse_pinpointnews_news(url)
+                elif "kdfnews" in url:
+                    self.parse_kdfnews_news(url)
+                elif "gamefocus" in url:
+                    self.parse_gamefocus_news(url)
+                elif "newsis.com/world" in url:
+                    self.parse_newsis_world_news(url)   
+                elif "newsis.com/money" in url:
+                    self.parse_newsis_money_news(url)   
+                elif "newsis.com/economy" in url:
+                    self.parse_newsis_economy_news(url)
+                elif "newsis.com/business" in url:
+                    self.parse_newsis_business_news(url)
+                elif "epnc" in url:
+                    self.parse_epnc_news(url)
+                elif "businesspost" in url:
+                    self.parse_businesspost_news(url)
+                elif "signalm" in url:
+                    self.parse_signalm_news(url)
+                elif "ebn" in url:
+                    self.parse_ebn_news(url)
+                elif "bosa" in url:
+                    self.parse_bosa_news(url)
+                elif "press9" in url and "S1N12" in url:
+                    self.parse_press9_pharmbiz_news(url)
+                elif "press9" in url and "S1N14" in url:
+                    self.parse_press9_industry_news(url)
+                elif "medisobizanews" in url:
+                    self.parse_medisobizanews_news(url)
+                elif "g-enews" in url:
+                    self.parse_genews_news1(url)
+                    self.parse_genews_news2(url)
+                elif "autodaily" in url:
+                    self.parse_autodaily_news(url)
+                elif "economist" in url:
+                    self.parse_economist_news1(url)
+                    self.parse_economist_news2(url)
+                elif "medisobizanews" in url:
+                    self.parse_medisobizanews_news(url)
+                elif "naver.com" in url:
+                    self.parse_naver_news(url)
+                elif "theguru" in url:
+                    self.parse_theguru_news(url)
+                elif "mtn.co" in url:
+                    self.parse_mtn_it_news(url)
+                elif "dailypharm" in url:
+                    self.parse_dailypharm_news(url)
+                elif "whosaeng" in url:
+                    self.parse_whosaeng_news(url)
+                elif "paxetv" in url:
+                    self.parse_paxetv_news(url)
+                elif "medipana" in url:
+                    self.parse_medipana_news(url)
+                elif "boannews" in url:
+                    self.parse_boannews_news(url)
+                time.sleep(60)  
+        except KeyboardInterrupt:
+            print('\nfinish')
+            pass
+
+    def parse_boannews_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.news_list")
+
+        for article in articles:
+            a_tag = article.find("a", href=True)
+            title_tag = article.find("span", class_="news_txt")
+            title = title_tag.get_text(strip=True)
+            link = "https://www.boannews.com" + a_tag['href']
+            date_tag = article.find("span", class_="news_writer")
+            date_str = date_tag.get_text(strip=True).split("|")[-1].strip()
+            dt = datetime.strptime(date_str, "%Y년 %m월 %d일 %H:%M")
+            date = dt.strftime("%Y-%m-%d %H:%M")
+            
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_medipana_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("li.altlist-webzine-item")
+
+        for article in articles:
+            title_tag = article.select_one("h2.altlist-subject a")
+            title = title_tag.get_text(strip=True)
+            link = title_tag['href']
+
+            date_tag = article.select("div.altlist-info-item")[-1]
+            date = date_tag.get_text(strip=True)
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_paxetv_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        req.encoding = req.apparent_encoding
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.list-block")
+
+        for article in articles:
+            title_tag = article.select_one("div.list-titles a strong")
+            if not title_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link_tag = article.select_one("div.list-titles a")
+            href = link_tag.get("href", "")
+            link = "https://www.paxetv.com" + href   
+
+            date_tag = article.select_one("div.list-dated")
+            full_date_text = date_tag.get_text(strip=True) if date_tag else ""
+            date = full_date_text.split("|")[-1].strip() if "|" in full_date_text else full_date_text
+
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+    
+    def parse_whosaeng_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("div.news_list2")
+
+        for article in articles:
+            title_tag = article.select_one("dd.title a")
+            if not title_tag:
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = "https://www.whosaeng.com" + title_tag['href']
+
+            date_tag = article.select_one("dd.write span.wdate")
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
+
+    def parse_dailypharm_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        req.encoding = 'euc-kr' 
+        soup = BeautifulSoup(req.text, 'html.parser')
+        sections = soup.select("li.SectionList")
+
+        for sec in sections:
+            articles = sec.select("div.SectionBody ul > li")
+
+            for article in articles:
+                a_tag = article.select_one("a[href]")
+                if not a_tag:
+                    continue
+
+                link = "https://www.dailypharm.com/Users/News/" + a_tag["href"].lstrip("/")
+
+                title_tag = article.select_one("div.HeadText div.Title")
+
+                if not title_tag:
+                    title_tag = a_tag
+
+                title = title_tag.get_text(strip=True)
+                date = ""
+                if title not in self.list_set:
+                    self.list_set.add(title)
+                    print(title, link, date)
+                else:
+                    break 
+    
+    def parse_mtn_it_news(self, url):
+        header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
+        req = requests.get(url, headers = header)
+        soup = BeautifulSoup(req.text, 'html.parser')
+        articles = soup.select("ul.css-ratt8o > li")
+
+        for article in articles:
+            a_tag = article.select_one("a")
+            if not a_tag:
+                continue
+
+            link = "https://news.mtn.co.kr" + a_tag["href"]
+
+            title_tag = article.select_one("div.css-9gdod1 h3")
+            date_tag = article.select_one("div.css-9gdod1 time")
+
+            title = title_tag.get_text(strip=True) if title_tag else ""
+            date = date_tag.get_text(strip=True) if date_tag else ""
+            if title not in self.list_set:
+                self.list_set.add(title)
+                print(title, link, date)
+            else:
+                break 
 
     def parse_info_news(self, url):
         header = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.46', 'Accept' : '*/*'}
@@ -899,91 +1149,7 @@ class Crawl():
             else:
                 break 
 
-
-    def run(self, url):
-        try:
-            while True:
-                #requests
-                if "infostockdaily" in url:
-                    self.parse_info_news(url)     
-                elif "thebell" in url:
-                    self.parse_thebell_news(url)
-                elif "etnews" in url:
-                    self.parse_etnews_news(url)
-                elif "thelec" in url:
-                    self.parse_thelec_news(url)
-                elif "zdnet" in url:
-                    self.parse_zdnet_news(url)
-                elif "yakup" in url:
-                    self.parse_yakup_news(url)
-                elif "dealsite" in url:
-                    self.parse_dealsite_news(url)
-                elif "pharmnews" in url:
-                    self.parse_pharmnews_news(url)
-                elif "newspim" in url:
-                    self.parse_newspim_news(url)
-                elif "newsprime" in url and "sec_no=56" in url:
-                    self.parse_newsprime_news1(url)
-                elif "newsprime" in url and "sec_no=57" in url:
-                    self.parse_newsprime_news2(url)
-                elif "finance-scope" in url:
-                    self.parse_finance_scope_news(url)
-                elif "hankyung" in url: 
-                    self.parse_hankyung_news(url)
-                elif "pointe" in url:
-                    self.parse_pointe_news(url)
-                elif "dt.co.kr" in url:
-                    self.parse_dt_news(url)
-                elif "biotimes" in url:
-                    self.parse_biotimes_news(url)
-                elif "pinpointnews" in url:
-                    self.parse_pinpointnews_news(url)
-                elif "kdfnews" in url:
-                    self.parse_kdfnews_news(url)
-                elif "gamefocus" in url:
-                    self.parse_gamefocus_news(url)
-                elif "newsis.com/world" in url:
-                    self.parse_newsis_world_news(url)   
-                elif "newsis.com/money" in url:
-                    self.parse_newsis_money_news(url)   
-                elif "newsis.com/economy" in url:
-                    self.parse_newsis_economy_news(url)
-                elif "newsis.com/business" in url:
-                    self.parse_newsis_business_news(url)
-                elif "epnc" in url:
-                    self.parse_epnc_news(url)
-                elif "businesspost" in url:
-                    self.parse_businesspost_news(url)
-                elif "signalm" in url:
-                    self.parse_signalm_news(url)
-                elif "ebn" in url:
-                    self.parse_ebn_news(url)
-                elif "bosa" in url:
-                    self.parse_bosa_news(url)
-                elif "press9" in url and "S1N12" in url:
-                    self.parse_press9_pharmbiz_news(url)
-                elif "press9" in url and "S1N14" in url:
-                    self.parse_press9_industry_news(url)
-                elif "medisobizanews" in url:
-                    self.parse_medisobizanews_news(url)
-                elif "g-enews" in url:
-                    self.parse_genews_news1(url)
-                    self.parse_genews_news2(url)
-                elif "autodaily" in url:
-                    self.parse_autodaily_news(url)
-                elif "economist" in url:
-                    self.parse_economist_news1(url)
-                    self.parse_economist_news2(url)
-                elif "medisobizanews" in url:
-                    self.parse_medisobizanews_news(url)
-                elif "naver.com" in url:
-                    self.parse_naver_news(url)
-                elif "theguru" in url:
-                    self.parse_theguru_news(url)
-                time.sleep(60)
-        except KeyboardInterrupt:
-            print('\nfinish')
-            pass
+    
 
     def crawl(self):
         pool = ThreadPoolExecutor(max_workers = 7)
